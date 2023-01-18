@@ -1,5 +1,8 @@
 #emek's linguistics tool
 from PyQt5 import QtCore, QtGui, QtWidgets
+
+from loader import *    
+
 class PlainTextWithButton(QtWidgets.QFrame):
     def __init__(self, parent):
         QtWidgets.QFrame.__init__(self, parent)
@@ -9,7 +12,7 @@ class PlainTextWithButton(QtWidgets.QFrame):
         QFrame{
         background: #e4e4e4;
         color: #000;
-        border-radius: 7px;
+        border-radius: 11px;
 
         }
         QPlainText:text::highlighted{
@@ -30,19 +33,27 @@ class PlainTextWithButton(QtWidgets.QFrame):
         }
         """)
         self.textArea = QtWidgets.QPlainTextEdit(self)
-        self.textArea.setGeometry(0,0,770,110)
+        self.textArea.setGeometry(0,0,740,110)
         self.textArea.setFocusPolicy(QtCore.Qt.NoFocus)
         self.textArea.setReadOnly(True)
+        self.textArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.copyButton = QtWidgets.QPushButton(self)
-        self.copyButton.setGeometry(660,110,100,32)
+        self.copyButton.setGeometry(640,115,100,32)
         self.copyButton.setSizePolicy(QtWidgets.QSizePolicy.Fixed,QtWidgets.QSizePolicy.Fixed)
         self.copyButton.setMinimumSize(100,0)
         self.copyButton.setText("KOPYALA")
-        self.textArea.setPlainText("QtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedvQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.FixedQtWidgets.QSizePolicy.Fixedv")
-
-class Content(QtWidgets.QFrame):
+        self.textArea.setPlaceholderText("Sonuçlar")
+class SyllableSeparator(QtWidgets.QFrame):
     def __init__(self, parent):
         QtWidgets.QFrame.__init__(self, parent)
+        #CONSONANTS
+        self.syllables = ["V","VC","CV","CVC","VCC","CVCC","C"]
+
+        self.c = "rtypğsdfghjklşzcvbnmçRTYPĞSDFGHJKLŞZCVBNMÇ"
+        self.v = "euıoüaiöEUIOÜAİÖ"
+
+        
+
         self.setGeometry(0,0,770,490)
         self.setStyleSheet("background-color: none;")
         self.flayout = QtWidgets.QGridLayout()
@@ -50,7 +61,8 @@ class Content(QtWidgets.QFrame):
         
         self.label = QtWidgets.QLabel(self)
         self.label.setText("Hece ayırıcı v0.1")
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        #self.label.setAlignment(QtCore.Qt.AlignLeft)
+        self.label.setAlignment(QtCore.Qt.AlignVCenter)
         self.flayout.addWidget(self.label)
 
         self.text = QtWidgets.QPlainTextEdit(self)
@@ -72,7 +84,7 @@ class Content(QtWidgets.QFrame):
         }
         """)
         self.but = QtWidgets.QPushButton(self)
-        self.but.setText("Transcibe")
+        self.but.setText("Hecele")
         #self.but.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Fixed)
         self.but.setStyleSheet("""
         QPushButton{
@@ -97,6 +109,61 @@ class Content(QtWidgets.QFrame):
 
         self.flayout.addWidget(self.twb)
         self.setLayout(self.flayout)
+        self.but.clicked.connect(self.separate)
+    def separate(self):
+        textInput = self.text.toPlainText()
+        
+        text_input_arr = textInput.split(" ")
+        arr = [[] for _ in range(len(text_input_arr))]
+        for x in range(len(text_input_arr)):
+            arr[x].append(text_input_arr[x])
+            syllableText = ""
+            for y in text_input_arr[x]:
+                if y in self.c:
+                    syllableText = syllableText + "C"
+                elif y in self.v:
+                    syllableText = syllableText + "V"
+            arr[x].append(syllableText)
+        hecearr=[]
+        isimarr=[]
+        results = []
+        textResult = ""
+        x = 0
+        for sozcuk in arr:
+            hecearr=[]
+            isimarr=[]
+            for k in range(4,0,-1):
+                if sozcuk[1][-k:] in self.syllables:
+                    hecearr.append(sozcuk[1][-k:])
+                    isimarr.append(sozcuk[0][-k:])
+                    x = k
+                    break
+            if len(sozcuk[1]) >= 4:
+                while x < len(sozcuk[1]):
+                    for k in range(4,0,-1):
+                        if sozcuk[1][-x-k:-x] in self.syllables:
+                            hecearr.append("-")
+                            isimarr.append("-")
+                            hecearr.append(sozcuk[1][-x-k:-x])
+                            isimarr.append(sozcuk[0][-x-k:-x])
+                            x = abs(-x-k)
+                            break            
+            hecearr.reverse()
+            isimarr.reverse()
+            if(hecearr[0] == "C"):
+                hecearr[0] = hecearr[0]+hecearr[2]
+                isimarr[0] = isimarr[0]+isimarr[2]
+                hecearr.pop(1)
+                isimarr.pop(1)
+                hecearr.pop(1)
+                isimarr.pop(1)
+            x = 0
+            results.append(isimarr)
+        for i in results:
+            for j in i:
+                textResult = textResult+j
+            textResult = textResult + " "
+        self.twb.textArea.setPlainText(textResult)
 
 class PicButton(QtWidgets.QAbstractButton):
     enterEventSignal = QtCore.pyqtSignal()
@@ -145,7 +212,7 @@ class UiWindow(QtWidgets.QMainWindow):
         super(UiWindow, self).__init__(parent)
         self.setStyleSheet("""
         QFrame{
-
+            
             background-color: #121212;
 
         }
@@ -249,17 +316,26 @@ class UiWindow(QtWidgets.QMainWindow):
         self.setFixedSize(940,520)
         self.offset = None
 
-        self.initUI()
 
-        c1 = Content(self.contentWorkFrame)
-        self.contentWorkFrameInit.hide()
+        self.initUI()
+        self.loader = Loader()
+        
+        self.navbar.itemClicked.connect(self.onNavbarItemClicked)
+        
         self.setCentralWidget(self.bgFrame)
         
-
+    def onNavbarItemClicked(self):
+        i = self.navbar.currentItem()
+        if(i.text(0) == "Hece Ayırıcı"):
+            
+            c1 = SyllableSeparator(self.contentWorkFrame)
+            c1.show()
+            self.contentWorkFrameInit.hide()
     def initUI(self):
         self.setWindowFlags(
             QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowSystemMenuHint
         )
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.bgFrame = QtWidgets.QFrame()
         
         self.mainFrame = QtWidgets.QFrame(self.bgFrame)
@@ -280,21 +356,22 @@ class UiWindow(QtWidgets.QMainWindow):
         self.contentWorkFrame.setGeometry(0,0,770,490)
         self.contentWorkFrameInit.setGeometry(0,0,770,490)
         self.topBarFrame.setStyleSheet("background-color: #202020;")
-        self.topBarFrameEffect = QtWidgets.QGraphicsDropShadowEffect(self.topBarFrame, enabled=True, blurRadius=25,offset=QtCore.QPointF(0.0,5.0))
-        self.topBarFrameEffect.setColor(QtGui.QColor("#000000"))
+        self.topBarFrameEffect = QtWidgets.QGraphicsDropShadowEffect(enabled=True, blurRadius=25,offset=QtCore.QPointF(0.0,5.0))
+        self.topBarFrameEffect.setColor(QtGui.QColor("#fff"))
         self.topBarFrame.setGraphicsEffect(self.topBarFrameEffect)
         self.leftMenuFrameEffect = QtWidgets.QGraphicsDropShadowEffect(self.leftMenuFrame, enabled=True, blurRadius=50,offset=QtCore.QPointF(1.0,0.0))
-        self.leftMenuFrameEffect.setColor(QtGui.QColor("#000000"))
+        self.leftMenuFrameEffect.setColor(QtGui.QColor("#000"))
         self.leftMenuFrame.setGraphicsEffect(self.leftMenuFrameEffect)
         #self.topBarFrame.setStyleSheet("background-color: rgb(52, 60, 81);")
 
+        
         self.leftMenuFrameLayout = QtWidgets.QVBoxLayout()
         self.navbar = QtWidgets.QTreeWidget()
         self.navbar.setStyleSheet("""
             QScrollBar:vertical{
                 background-color:  #292929;
                 border: none;
-                width: 10px;
+                width: 5px;
 
             }
             QTreeWidget{
@@ -322,13 +399,21 @@ class UiWindow(QtWidgets.QMainWindow):
             QTreeView::branch:has-children:!has-siblings:closed,
             QTreeView::branch:closed:has-children:has-siblings {
                     border-image: none;
-                    image: url(c:/users/emekk/desktop/masa/m/zoom/closeButton.png);
+                    image: url(src/appicons/branchClosed.png);
             }
-
+            QTreeView::branch:has-children:closed:hover{
+                    border-image:none;
+                    image: url(src/appicons/branchClosedHover.png);
+            }
+            QTreeView::branch:open:has-children:has-siblings:hover,
+            QTreeView::branch:open:has-children:!has-siblings:hover{
+                    border-image:none;
+                    image: url(src/appicons/branchOpenHover.png);
+            }
             QTreeView::branch:open:has-children:!has-siblings,
             QTreeView::branch:open:has-children:has-siblings  {
                     border-image: none;
-                    image: url(c:/users/emekk/desktop/masa/m/zoom/minimizeButton.png);
+                    image: url(src/appicons/branchOpen.png);
             }
         """)
         self.navbar.setHeaderHidden(True)
@@ -340,7 +425,7 @@ class UiWindow(QtWidgets.QMainWindow):
         
         
         topics = ["Sesbilim","Sözdizim","Biçimbilim"]
-        topicIcons = [f"c:/users/emekk/desktop/masa/m/zoom/minimizeButton.png","c:/users/emekk/desktop/masa/m/zoom/closeButton.png","c:/users/emekk/desktop/masa/m/zoom/closeButton.png"]
+        topicIcons = [f"src/appicons/sesbilimIcon.png","src/appicons/sozdizimIcon.png","src/appicons/bicimbilimIcon.png"]
         subtopics = {
             "Sesbilim": ["Hece Ayırıcı"],
             "Sözdizim": ["Yok"],
@@ -357,7 +442,7 @@ class UiWindow(QtWidgets.QMainWindow):
                 subtopicItem = QtWidgets.QTreeWidgetItem()
                 subtopicItem.setText(0,subtopic)
                 topicItem.addChild(subtopicItem)
-
+        
         self.leftMenuFrameLayout.addWidget(self.navbar)
         self.leftMenuFrame.setLayout(self.leftMenuFrameLayout)
         self.leftMenuFrameLayout.setContentsMargins(0,0,0,0)
@@ -366,6 +451,9 @@ class UiWindow(QtWidgets.QMainWindow):
         self.contentWorkFrameInitLayout = QtWidgets.QHBoxLayout()
         self.welcomeTitle = QtWidgets.QLabel(self.contentWorkFrameInit)
         self.welcomeTitle.setText("Hoş geldiniz!")
+        self.welcomeTitle.setStyleSheet(" font-size: 120px;color:#efefef;")
+        self.welcomeTitleEffect = QtWidgets.QGraphicsDropShadowEffect(enabled=True,offset=QtCore.QPointF(0,5), blurRadius=25,color=QtGui.QColor("gray"))
+        self.welcomeTitle.setGraphicsEffect(self.welcomeTitleEffect)
         #self.welcomeTitle.setFont(QtGui.QFont('Helvetica', 32))
         self.welcomeTitle.setAlignment(QtCore.Qt.AlignCenter)
         self.contentWorkFrameInitLayout.addWidget(self.welcomeTitle)
@@ -379,20 +467,20 @@ class UiWindow(QtWidgets.QMainWindow):
 
         self.titleLabel = QtWidgets.QLabel(self.topBarFrame)
         #self.titleLabel.setFont(QtGui.QFont('Helvetica', 8))
-        self.titleLabel.setGeometry(50,0,200,30)
+        self.titleLabel.setGeometry(30,0,200,30)
         self.titleLabel.setStyleSheet("color: rgb(202, 202, 202);")
         self.titleLabel.setText("<html><head/><body><p><span style=\" font-size:10pt;\">Emek's Linguistics Tools</span></p></body></html>")
         self.titleLabel.setToolTip("bozbulanik v0.01")
         #self.titleLabel.mousePressEvent = self.aboutContent
 
         self.appIcon = QtWidgets.QLabel(self.topBarFrame)
-        self.appIcon.setGeometry(15,0,30,30)
-        self.appIcon.setPixmap(QtGui.QPixmap(f"C:/Users/emekk/Desktop/masa/m/zoom/simge.png"))
+        self.appIcon.setGeometry(0,0,30,30)
+        self.appIcon.setPixmap(QtGui.QPixmap(f"src/appicons/appicon.png"))
         self.appIcon.setToolTip("Lingua")
 
-        self.minimizeButton = PicButton(QtGui.QPixmap(f"c:/users/emekk/desktop/masa/m/zoom/minimizeButton.png"),QtGui.QPixmap(f"c:/users/emekk/desktop/masa/m/zoom/minimizeHover.png"),QtGui.QPixmap(f"c:/users/emekk/desktop/masa/m/zoom/minimizeHover.png"),30,30,False,self.topBarFrame)
+        self.minimizeButton = PicButton(QtGui.QPixmap(f"src/appicons/minimizeButton.png"),QtGui.QPixmap(f"src/appicons/minimizeHover.png"),QtGui.QPixmap(f"src/appicons/minimizeHover.png"),30,30,False,self.topBarFrame)
         self.minimizeButton.setGeometry(880,0,30,30)
-        self.closeButton = PicButton(QtGui.QPixmap(f"c:/users/emekk/desktop/masa/m/zoom/closeButton.png"),QtGui.QPixmap(f"c:/users/emekk/desktop/masa/m/zoom/closeHover.png"),QtGui.QPixmap(f"c:/users/emekk/desktop/masa/m/zoom/closeHover.png"),30,30,False,self.topBarFrame)
+        self.closeButton = PicButton(QtGui.QPixmap(f"src/appicons/closeButton.png"),QtGui.QPixmap(f"src/appicons/closeHover.png"),QtGui.QPixmap(f"src/appicons/closeHover.png"),30,30,False,self.topBarFrame)
         self.closeButton.setGeometry(910,0,30,30)
 
         self.minimizeButton.clicked.connect(self.showMinimized)
